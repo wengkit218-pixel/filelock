@@ -214,15 +214,25 @@ That's it.
 
 ---
 
-## 发布顺序建议
+## ⚠️ 发布前必读（2026-07 版规核查）
 
-1. **先发 Hacker News**（技术观众，转化率高，可能上首页）
-2. **同日发 Reddit r/privacy**（隐私爱好者，目标用户）
-3. **次日发 Reddit r/webdev / r/programming**（开发者观众，引 star）
-4. **Twitter/X** 随时发，作为 backup
+- **r/privacy 当前禁止发 app/工具推广帖**（规则 R13: "Requests to post about apps are on hold, including open-source"）。**暂不要发 r/privacy**，否则帖子被删甚至被 ban。等该 sub 重新开放或改发其他 sub。
+- **r/programming 禁止纯链接/功能列表推广**（规则 R5: "I made this" 必须有技术 writeup，且 R1 禁止明显 AI 写的文案）。发 r/programming 必须用技术向版本（讲 Web Crypto / LSB 隐写 / PBKDF2 实现细节），且用自己的话改掉 AI 味。
+- **HN Show HN** 是最合适的首发阵地（专门给 "I made this"），但**新号需先攒 karma**（注册后先在评论区活跃几天再发，否则可能不显示）。
+- Reddit 新号还可能被 sub 的账号年龄/karma 门槛挡住，发前确认账号已验证邮箱、攒了点 karma。
+
+## 发布顺序建议（调整后）
+
+1. **先发 Hacker News Show HN**（技术观众，转化率高；新号先攒 karma）
+2. **发 r/opensource**（开源项目分享，通常欢迎 "I made this"）
+3. **发 r/selfhosted**（备份加密场景贴合，自托管用户友好）
+4. **发 r/programming**（必须用技术 writeup 版，去掉 AI 味）
+5. **Twitter/X** 随时发，作为 backup
+6. **r/privacy 暂不发**（等 R13 on hold 解除）
 
 **注意事项：**
 - HN 发完 30 分钟内不要离开页面，要回复评论
 - Reddit 发完自己也要顶一两条评论带技术细节
 - 每个平台的文案风格不同，**不要复制粘贴**通用版
+- r/programming / r/webdev 文案已偏技术，但**务必用自己的话改写，去掉 AI 痕迹**
 - 如果 HN 上首页（>100 分），当天可能 500+ star
