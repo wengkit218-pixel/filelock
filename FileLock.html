@@ -139,6 +139,8 @@
     <div class="tabs">
       <div class="tab active" id="tabEncrypt" onclick="switchTab('encrypt')">🔒 加密</div>
       <div class="tab" id="tabDecrypt" onclick="switchTab('decrypt')">🔓 解密</div>
+      <div class="tab" id="tabSteg" onclick="switchTab('steg')">🖼 隐写</div>
+      <div class="tab" id="tabSelf" onclick="switchTab('self')">📄 自解密</div>
     </div>
 
     <!-- Encrypt Tab -->
@@ -202,6 +204,123 @@
 
       <div class="result" id="decResult"></div>
     </div>
+
+    <!-- Steganography Tab -->
+    <div id="stegPanel" style="display:none;">
+      <div class="mode-toggle" style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="btn btn-secondary" id="stegModeEnc" onclick="setStegMode('enc')" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent);">🖼 加密进图片</button>
+        <button class="btn btn-secondary" id="stegModeDec" onclick="setStegMode('dec')" style="flex:1;">📤 从图片提取</button>
+      </div>
+
+      <div class="security-note">
+        <strong>🖼 隐写说明：</strong><br>
+        • 加密数据隐藏在图片像素<strong>最低位</strong>，肉眼完全不可见<br>
+        • <strong>可否认隐写</strong>：无密码者看图片就是普通照片，无法察觉其中有加密数据<br>
+        • <strong>传输警告</strong>：请通过邮件附件 / 网盘发送 .stego.png，<strong>不要用微信/QQ 直接发</strong>（会被压缩成 JPG 破坏数据）
+      </div>
+
+      <div id="stegEncWrap">
+        <div class="dropzone" id="stegCoverDrop" onclick="document.getElementById('stegCover').click()">
+          <div class="dropzone-icon">🖼</div>
+          <div class="dropzone-text">选择封面图片（PNG）</div>
+          <div class="dropzone-hint">加密数据将隐藏在这张图片的像素中</div>
+        </div>
+        <input type="file" id="stegCover" accept="image/png" style="display:none" onchange="onStegCoverSelect(this)">
+        <div class="file-info" id="stegCoverInfo">
+          <div class="file-name" id="stegCoverName"></div>
+          <div class="file-size" id="stegCoverSize"></div>
+          <div class="file-size" id="stegCoverCap"></div>
+        </div>
+
+        <div class="dropzone" id="stegFileDrop" onclick="document.getElementById('stegFile').click()">
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-text">选择要加密隐藏的文件</div>
+          <div class="dropzone-hint">图片 / 文档 / 任意格式</div>
+        </div>
+        <input type="file" id="stegFile" style="display:none" onchange="onStegFileSelect(this)">
+        <div class="file-info" id="stegFileInfo">
+          <div class="file-name" id="stegFileName"></div>
+          <div class="file-size" id="stegFileSize"></div>
+          <div class="file-size" id="stegCapWarn" style="color:var(--red);display:none;"></div>
+        </div>
+
+        <div class="input-wrap">
+          <label>设置密码</label>
+          <input type="password" id="stegPwd" placeholder="输入强密码" oninput="checkStrength(this.value, 'stegStrength', 'stegStrengthText')">
+          <span class="toggle-pwd" onclick="togglePwd('stegPwd', this)">👁</span>
+          <div class="strength"><div class="strength-bar" id="stegStrength"></div></div>
+          <div class="strength-text" id="stegStrengthText"></div>
+        </div>
+
+        <button class="btn btn-primary" id="stegEncBtn" onclick="stegEncrypt()" disabled>🖼 加密并隐藏到图片</button>
+        <div class="progress-wrap" id="stegEncProgress">
+          <div class="progress-bar"><div class="progress-fill" id="stegEncProgressFill"></div></div>
+          <div class="progress-text" id="stegEncProgressText"></div>
+        </div>
+        <div class="result" id="stegEncResult"></div>
+      </div>
+
+      <div id="stegDecWrap" style="display:none;">
+        <div class="dropzone" id="stegStegoDrop" onclick="document.getElementById('stegStego').click()">
+          <div class="dropzone-icon">📤</div>
+          <div class="dropzone-text">选择隐写图片（PNG）</div>
+          <div class="dropzone-hint">由 FileLock 生成的隐藏了加密数据的图片</div>
+        </div>
+        <input type="file" id="stegStego" accept="image/png" style="display:none" onchange="onStegStegoSelect(this)">
+        <div class="file-info" id="stegStegoInfo">
+          <div class="file-name" id="stegStegoName"></div>
+          <div class="file-size" id="stegStegoSize"></div>
+        </div>
+
+        <div class="input-wrap">
+          <label>输入密码</label>
+          <input type="password" id="stegDecPwd" placeholder="输入加密时使用的密码">
+          <span class="toggle-pwd" onclick="togglePwd('stegDecPwd', this)">👁</span>
+        </div>
+
+        <button class="btn btn-primary" id="stegDecBtn" onclick="stegDecrypt()" disabled>📤 提取并解密</button>
+        <div class="progress-wrap" id="stegDecProgress">
+          <div class="progress-bar"><div class="progress-fill" id="stegDecProgressFill"></div></div>
+          <div class="progress-text" id="stegDecProgressText"></div>
+        </div>
+        <div class="result" id="stegDecResult"></div>
+      </div>
+    </div>
+
+    <!-- Self-decrypt Tab -->
+    <div id="selfPanel" style="display:none;">
+      <div class="dropzone" id="selfDrop" onclick="document.getElementById('selfFile').click()">
+        <div class="dropzone-icon">📄</div>
+        <div class="dropzone-text">选择要加密的文件</div>
+        <div class="dropzone-hint">将打包成「双击即解密」的 HTML 文件</div>
+      </div>
+      <input type="file" id="selfFile" style="display:none" onchange="onSelfFileSelect(this)">
+      <div class="file-info" id="selfFileInfo">
+        <div class="file-name" id="selfFileName"></div>
+        <div class="file-size" id="selfFileSize"></div>
+      </div>
+
+      <div class="input-wrap">
+        <label>设置密码</label>
+        <input type="password" id="selfPwd" placeholder="输入强密码">
+        <span class="toggle-pwd" onclick="togglePwd('selfPwd', this)">👁</span>
+      </div>
+
+      <div class="security-note">
+        <strong>📄 自解密 HTML：</strong><br>
+        • 加密后生成一个 <code>.html</code> 文件，内含密文 + 解密代码<br>
+        • 对方收到后<strong>双击即可解密</strong>，无需下载 FileLock<br>
+        • 适合通过微信 / 邮件发给不懂技术的朋友<br>
+        • 文件体积 ≈ 原文件 × 1.4（base64 膨胀）
+      </div>
+
+      <button class="btn btn-primary" id="selfBtn" onclick="selfDecryptGen()" disabled>📄 生成自解密 HTML</button>
+      <div class="progress-wrap" id="selfProgress">
+        <div class="progress-bar"><div class="progress-fill" id="selfProgressFill"></div></div>
+        <div class="progress-text" id="selfProgressText"></div>
+      </div>
+      <div class="result" id="selfResult"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -259,10 +378,12 @@ let selectedFiles = { encrypt: null, decrypt: null };
 // ---- Tab switching ----
 function switchTab(tab) {
   currentTab = tab;
-  document.getElementById('tabEncrypt').classList.toggle('active', tab === 'encrypt');
-  document.getElementById('tabDecrypt').classList.toggle('active', tab === 'decrypt');
-  document.getElementById('encryptPanel').style.display = tab === 'encrypt' ? 'block' : 'none';
-  document.getElementById('decryptPanel').style.display = tab === 'decrypt' ? 'block' : 'none';
+  ['encrypt', 'decrypt', 'steg', 'self'].forEach(t => {
+    const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (tabEl) tabEl.classList.toggle('active', tab === t);
+    const panel = document.getElementById(t + 'Panel');
+    if (panel) panel.style.display = tab === t ? 'block' : 'none';
+  });
 }
 
 // ---- File selection ----
@@ -515,6 +636,382 @@ async function decryptFile() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ============================================================
+// Steganography (LSB embed in PNG) + Self-decrypting HTML
+// ============================================================
+const STEG_MAGIC = [0x53, 0x54, 0x47, 0x31]; // "STG1"
+let stegState = { cover: null, file: null, stego: null };
+let selfState = { file: null };
+
+// ---- Refactored crypto core (reusable) ----
+async function buildLocked(file, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const key = await deriveKey(password, salt);
+  const data = await file.arrayBuffer();
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+  const nameBytes = new TextEncoder().encode(file.name);
+  const header = new Uint8Array(6 + 1 + SALT_LENGTH + IV_LENGTH + 2 + nameBytes.length);
+  let off = 0;
+  header.set([0x46, 0x4C, 0x4B, 0x31, 0x30, 0x30], off); off += 6; // FLK100
+  header[off++] = 1;
+  header.set(salt, off); off += SALT_LENGTH;
+  header.set(iv, off); off += IV_LENGTH;
+  header[off++] = (nameBytes.length >> 8) & 0xff;
+  header[off++] = nameBytes.length & 0xff;
+  header.set(nameBytes, off); off += nameBytes.length;
+  const out = new Uint8Array(header.length + encrypted.byteLength);
+  out.set(header, 0);
+  out.set(new Uint8Array(encrypted), header.length);
+  return out;
+}
+
+async function decryptLocked(lockedBuf, password) {
+  if (lockedBuf.length < 6 + 1 + SALT_LENGTH + IV_LENGTH + 2) throw new Error('文件格式无效');
+  const magic = String.fromCharCode(...lockedBuf.slice(0, 6));
+  if (magic !== 'FLK100') throw new Error('不是有效的 FileLock 文件');
+  let off = 6;
+  off++;
+  const salt = lockedBuf.slice(off, off + SALT_LENGTH); off += SALT_LENGTH;
+  const iv = lockedBuf.slice(off, off + IV_LENGTH); off += IV_LENGTH;
+  const nameLen = (lockedBuf[off] << 8) | lockedBuf[off + 1]; off += 2;
+  const origName = new TextDecoder().decode(lockedBuf.slice(off, off + nameLen)); off += nameLen;
+  const ciphertext = lockedBuf.slice(off);
+  const key = await deriveKey(password, salt);
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return { data: decrypted, name: origName };
+}
+
+// ---- Steg helpers ----
+function loadImage(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('图片加载失败')); };
+    img.src = url;
+  });
+}
+
+function readBits(px, totalBits) {
+  const out = new Uint8Array(Math.ceil(totalBits / 8));
+  let bitIdx = 0;
+  for (let i = 0; i < px.length && bitIdx < totalBits; i += 4) {
+    for (let c = 0; c < 3 && bitIdx < totalBits; c++) {
+      out[bitIdx >> 3] |= (px[i + c] & 1) << (7 - (bitIdx & 7));
+      bitIdx++;
+    }
+  }
+  return out;
+}
+
+function writeBits(px, payload) {
+  let bitIdx = 0;
+  const totalBits = payload.length * 8;
+  for (let i = 0; i < px.length && bitIdx < totalBits; i += 4) {
+    for (let c = 0; c < 3 && bitIdx < totalBits; c++) {
+      const bit = (payload[bitIdx >> 3] >> (7 - (bitIdx & 7))) & 1;
+      px[i + c] = (px[i + c] & 0xFE) | bit;
+      bitIdx++;
+    }
+  }
+}
+
+// ---- 可否认隐写：XOR 混淆（无密码看不出是隐写图） ----
+async function deriveXorKey(password, salt, length) {
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    km, Math.ceil(length / 32) * 256
+  );
+  return new Uint8Array(bits);
+}
+function xorBytes(data, key) {
+  for (let i = 0; i < data.length; i++) data[i] ^= key[i % key.length];
+}
+
+function setStegMode(mode) {
+  document.getElementById('stegEncWrap').style.display = mode === 'enc' ? 'block' : 'none';
+  document.getElementById('stegDecWrap').style.display = mode === 'dec' ? 'block' : 'none';
+  const enc = document.getElementById('stegModeEnc'), dec = document.getElementById('stegModeDec');
+  enc.style.background = mode === 'enc' ? 'var(--accent)' : 'var(--card2)';
+  enc.style.color = mode === 'enc' ? '#fff' : 'var(--text2)';
+  enc.style.borderColor = mode === 'enc' ? 'var(--accent)' : 'var(--border)';
+  dec.style.background = mode === 'dec' ? 'var(--accent)' : 'var(--card2)';
+  dec.style.color = mode === 'dec' ? '#fff' : 'var(--text2)';
+  dec.style.borderColor = mode === 'dec' ? 'var(--accent)' : 'var(--border)';
+}
+
+function onStegCoverSelect(input) {
+  const f = input.files[0]; if (!f) return;
+  stegState.cover = f;
+  document.getElementById('stegCoverName').textContent = f.name;
+  document.getElementById('stegCoverSize').textContent = formatSize(f.size);
+  const img = new Image();
+  const url = URL.createObjectURL(f);
+  img.onload = () => {
+    const cap = Math.floor(img.width * img.height * 3 / 8);
+    stegState.coverCap = cap;
+    document.getElementById('stegCoverCap').textContent = '可隐藏容量：约 ' + formatSize(cap);
+    if (stegState.file) updateStegCapWarn();
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+  document.getElementById('stegCoverInfo').classList.add('show');
+  updateStegEncBtn();
+}
+function onStegFileSelect(input) {
+  const f = input.files[0]; if (!f) return;
+  stegState.file = f;
+  document.getElementById('stegFileName').textContent = f.name;
+  document.getElementById('stegFileSize').textContent = formatSize(f.size);
+  document.getElementById('stegFileInfo').classList.add('show');
+  updateStegCapWarn();
+  updateStegEncBtn();
+}
+function updateStegCapWarn() {
+  const warnEl = document.getElementById('stegCapWarn');
+  if (!stegState.coverCap || !stegState.file) { warnEl.style.display = 'none'; return; }
+  const f = stegState.file;
+  const estLocked = f.size + 6 + 1 + 16 + 12 + 2 + new TextEncoder().encode(f.name).length + 40;
+  if (estLocked > stegState.coverCap) {
+    warnEl.textContent = '⚠ 文件可能超出封面图容量，需更大 PNG';
+    warnEl.style.display = 'block';
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+function onStegStegoSelect(input) {
+  const f = input.files[0]; if (!f) return;
+  stegState.stego = f;
+  document.getElementById('stegStegoName').textContent = f.name;
+  document.getElementById('stegStegoSize').textContent = formatSize(f.size);
+  document.getElementById('stegStegoInfo').classList.add('show');
+  updateStegDecBtn();
+}
+function onSelfFileSelect(input) {
+  const f = input.files[0]; if (!f) return;
+  selfState.file = f;
+  document.getElementById('selfFileName').textContent = f.name;
+  document.getElementById('selfFileSize').textContent = formatSize(f.size);
+  document.getElementById('selfFileInfo').classList.add('show');
+  updateSelfBtn();
+}
+function updateStegEncBtn() {
+  document.getElementById('stegEncBtn').disabled = !(stegState.cover && stegState.file && document.getElementById('stegPwd').value.length >= 1);
+}
+function updateStegDecBtn() {
+  document.getElementById('stegDecBtn').disabled = !(stegState.stego && document.getElementById('stegDecPwd').value.length >= 1);
+}
+function updateSelfBtn() {
+  document.getElementById('selfBtn').disabled = !(selfState.file && document.getElementById('selfPwd').value.length >= 1);
+}
+document.getElementById('stegPwd').addEventListener('input', updateStegEncBtn);
+document.getElementById('stegDecPwd').addEventListener('input', updateStegDecBtn);
+document.getElementById('selfPwd').addEventListener('input', updateSelfBtn);
+
+async function stegEncrypt() {
+  const cover = stegState.cover, file = stegState.file, pwd = document.getElementById('stegPwd').value;
+  if (!cover || !file || !pwd) return;
+  const btn = document.getElementById('stegEncBtn'), pw = document.getElementById('stegEncProgress');
+  const pf = document.getElementById('stegEncProgressFill'), pt = document.getElementById('stegEncProgressText'), res = document.getElementById('stegEncResult');
+  btn.disabled = true; pw.classList.add('show'); res.classList.remove('show', 'error'); pf.style.width = '0%';
+  try {
+    pt.textContent = '加密文件中…'; pf.style.width = '30%';
+    const locked = await buildLocked(file, pwd);
+    pt.textContent = '嵌入图片中…'; pf.style.width = '60%';
+    const img = await loadImage(cover);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const px = imgData.data;
+    const capacityBits = (px.length / 4) * 3;
+    // 可否认隐写：用密码派生 keystream 混淆 payload（无密码看不出是隐写图）
+    const xorSalt = crypto.getRandomValues(new Uint8Array(16));
+    const payloadLen = STEG_MAGIC.length + 4 + locked.length;
+    const xorKey = await deriveXorKey(pwd, xorSalt, payloadLen);
+    const payload = new Uint8Array(payloadLen);
+    payload.set(STEG_MAGIC, 0);
+    payload[4] = (locked.length >>> 24) & 0xff;
+    payload[5] = (locked.length >>> 16) & 0xff;
+    payload[6] = (locked.length >>> 8) & 0xff;
+    payload[7] = locked.length & 0xff;
+    payload.set(locked, 8);
+    xorBytes(payload, xorKey);
+    const finalPayload = new Uint8Array(xorSalt.length + payload.length);
+    finalPayload.set(xorSalt, 0);
+    finalPayload.set(payload, xorSalt.length);
+    if (finalPayload.length * 8 > capacityBits) throw new Error('封面图太小，无法容纳。需更大 PNG（建议 ≥ ' + Math.ceil(finalPayload.length / 0.375 / 1024) + ' KB 像素量）');
+    writeBits(px, finalPayload);
+    ctx.putImageData(imgData, 0, 0);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = (cover.name.replace(/\.png$/i, '') || 'cover') + '.stego.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    pf.style.width = '100%'; pt.textContent = '完成！';
+    res.innerHTML = `✅ 已隐藏到图片！<br>下载为 <code>${a.download}</code><br>图片看起来是普通照片，<strong>无密码无法察觉其中有加密数据</strong>`;
+    res.classList.add('show');
+    showToast('隐写完成', 'success');
+  } catch (e) {
+    res.innerHTML = `❌ 失败：${e.message}`;
+    res.classList.add('show', 'error');
+    showToast('隐写失败', 'error');
+  } finally { btn.disabled = false; }
+}
+
+async function stegDecrypt() {
+  const stego = stegState.stego, pwd = document.getElementById('stegDecPwd').value;
+  if (!stego || !pwd) return;
+  const btn = document.getElementById('stegDecBtn'), pw = document.getElementById('stegDecProgress');
+  const pf = document.getElementById('stegDecProgressFill'), pt = document.getElementById('stegDecProgressText'), res = document.getElementById('stegDecResult');
+  btn.disabled = true; pw.classList.add('show'); res.classList.remove('show', 'error'); pf.style.width = '0%';
+  try {
+    pt.textContent = '读取图片…'; pf.style.width = '20%';
+    const img = await loadImage(stego);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    pt.textContent = '提取数据中…'; pf.style.width = '50%';
+    const capacityBits = (px.length / 4) * 3;
+    const raw = readBits(px, capacityBits); // 读满全部容量
+    const xorSaltArr = raw.slice(0, 16);
+    const obfuscated = raw.slice(16);
+    const xorKey = await deriveXorKey(pwd, xorSaltArr, obfuscated.length);
+    const payload = obfuscated.slice();
+    xorBytes(payload, xorKey); // 恢复明文 payload
+    for (let i = 0; i < 4; i++) if (payload[i] !== STEG_MAGIC[i]) throw new Error('密码错误或不是 FileLock 隐写图片');
+    const len = (payload[4] << 24) | (payload[5] << 16) | (payload[6] << 8) | payload[7];
+    const locked = payload.slice(8, 8 + len);
+    pt.textContent = '解密中…'; pf.style.width = '70%';
+    const { data, name } = await decryptLocked(locked, pwd);
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+    pf.style.width = '100%'; pt.textContent = '完成！';
+    res.innerHTML = `✅ 提取并解密成功！<br>文件已恢复为 <code>${name}</code>`;
+    res.classList.add('show');
+    showToast('解密完成', 'success');
+  } catch (e) {
+    let msg = e.message;
+    if (e.name === 'OperationError') msg = '密码错误或图片已损坏';
+    res.innerHTML = `❌ 失败：${msg}`;
+    res.classList.add('show', 'error');
+    showToast('解密失败', 'error');
+  } finally { btn.disabled = false; }
+}
+
+// ---- Self-decrypting HTML ----
+const SELF_DEC_TEMPLATE = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileLock 加密文件 — 双击解密</title>
+<style>
+body{font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;background:#0a0a0f;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.box{background:#14141f;border:1px solid #2a2a3d;border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center}
+h1{font-size:1.5rem;margin-bottom:8px}
+p{color:#94a3b8;font-size:0.9rem;margin-bottom:20px}
+input{width:100%;padding:12px 14px;border-radius:10px;background:#1c1c2b;border:1px solid #2a2a3d;color:#e2e8f0;font-size:0.95rem;box-sizing:border-box;margin-bottom:16px;outline:none}
+input:focus{border-color:#f97316}
+button{width:100%;padding:14px;border:none;border-radius:10px;background:#f97316;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+#status{margin-top:16px;font-size:0.85rem;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>🔓 FileLock 加密文件</h1>
+<p>输入密码以解密文件</p>
+<input type="password" id="pwd" placeholder="输入密码">
+<button onclick="decrypt()">解密并下载</button>
+<div id="status"></div>
+</div>
+<script>
+const DATA = "__DATA__";
+const NAME = "__NAME__";
+const PBKDF2_ITERATIONS = 100000, SALT_LENGTH = 16, IV_LENGTH = 12;
+function b64ToBytes(b){const s=atob(b);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
+async function deriveKey(password, salt){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:PBKDF2_ITERATIONS,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+}
+async function decrypt(){
+  const pwd=document.getElementById('pwd').value;
+  const status=document.getElementById('status');
+  if(!pwd){status.textContent='请输入密码';return;}
+  status.textContent='解密中…';
+  try{
+    const buf=b64ToBytes(DATA);
+    if(buf.length<37)throw new Error('文件无效');
+    const magic=String.fromCharCode.apply(null,buf.slice(0,6));
+    if(magic!=='FLK100')throw new Error('不是有效的 FileLock 文件');
+    let off=6; off++;
+    const salt=buf.slice(off,off+16); off+=16;
+    const iv=buf.slice(off,off+12); off+=12;
+    const nameLen=(buf[off]<<8)|buf[off+1]; off+=2;
+    off+=nameLen;
+    const ct=buf.slice(off);
+    const key=await deriveKey(pwd,salt);
+    const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+    const blob=new Blob([dec],{type:'application/octet-stream'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=NAME; a.click();
+    URL.revokeObjectURL(url);
+    status.textContent='✅ 解密成功，文件已下载';
+  }catch(e){
+    status.textContent=(e.name==='OperationError')?'密码错误或文件损坏':'解密失败：'+e.message;
+  }
+}
+<\/script>
+</body>
+</html>`;
+
+function arrayBufferToBase64(buf) {
+  let bin = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+async function selfDecryptGen() {
+  const file = selfState.file, pwd = document.getElementById('selfPwd').value;
+  if (!file || !pwd) return;
+  const btn = document.getElementById('selfBtn'), pw = document.getElementById('selfProgress');
+  const pf = document.getElementById('selfProgressFill'), pt = document.getElementById('selfProgressText'), res = document.getElementById('selfResult');
+  btn.disabled = true; pw.classList.add('show'); res.classList.remove('show', 'error'); pf.style.width = '0%';
+  try {
+    pt.textContent = '加密中…'; pf.style.width = '40%';
+    const locked = await buildLocked(file, pwd);
+    pt.textContent = '打包 HTML…'; pf.style.width = '80%';
+    const b64 = arrayBufferToBase64(locked);
+    let html = SELF_DEC_TEMPLATE.replace('__DATA__', b64).replace('__NAME__', file.name.replace(/"/g, '&quot;'));
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = file.name + '.locked.html'; a.click();
+    URL.revokeObjectURL(url);
+    pf.style.width = '100%'; pt.textContent = '完成！';
+    res.innerHTML = `✅ 自解密 HTML 已生成！<br>下载为 <code>${file.name}.locked.html</code><br>对方双击即可解密，无需 FileLock`;
+    res.classList.add('show');
+    showToast('自解密 HTML 已生成', 'success');
+  } catch (e) {
+    res.innerHTML = `❌ 失败：${e.message}`;
+    res.classList.add('show', 'error');
+    showToast('生成失败', 'error');
+  } finally { btn.disabled = false; }
 }
 
 // ---- About ----

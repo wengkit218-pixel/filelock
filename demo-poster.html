@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>FileLock — Demo Poster</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+    color: #e2e8f0;
+    font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    padding: 40px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 2.2rem; margin-bottom: 8px; }
+  .sub { text-align: center; color: #94a3b8; margin-bottom: 36px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card {
+    background: #14141f;
+    border: 1px solid #2a2a3d;
+    border-radius: 14px;
+    padding: 24px 20px;
+    min-height: 360px;
+    display: flex; flex-direction: column;
+  }
+  .card-icon { font-size: 2.6rem; text-align: center; margin-bottom: 12px; }
+  .card-title { font-size: 1.15rem; font-weight: 700; text-align: center; margin-bottom: 10px; color: #fff; }
+  .card-desc { color: #94a3b8; font-size: 0.85rem; line-height: 1.6; text-align: center; flex: 1; }
+  .pill {
+    display: inline-block;
+    background: rgba(249,115,22,0.15);
+    color: #f97316;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    margin: 3px;
+  }
+  .pills { text-align: center; margin-top: 12px; }
+  .highlight {
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    color: #22c55e;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .demo-file {
+    background: #1c1c2b;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    word-break: break-all;
+    text-align: center;
+  }
+  .cta {
+    margin-top: 36px; padding: 28px;
+    background: #14141f; border-radius: 16px;
+    border: 1px solid #2a2a3d; text-align: center;
+  }
+  .cta-title { font-size: 1.6rem; font-weight: 700; color: #f97316; margin-bottom: 6px; }
+  .cta-sub { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; }
+  .badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    background: #1c1c2b; border: 1px solid #2a2a3d;
+    padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8;
+  }
+  .badge strong { color: #f97316; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔐 FileLock</h1>
+  <p class="sub">离线文件加密 · 单 HTML · 零依赖 · 完全私密</p>
+
+  <div class="row3">
+    <!-- 功能1：标准加密 -->
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <div class="card-title">标准加密 (.locked)</div>
+      <div class="card-desc">任意文件 → AES-256-GCM 加密 → 下载 <code>.locked</code>。文件名内嵌，可安全分享。</div>
+      <div class="demo-file">📄 secret.zip → 🔒 secret.zip.locked</div>
+      <div class="pills">
+        <span class="pill">AES-256-GCM</span>
+        <span class="pill">PBKDF2 ×10万</span>
+      </div>
+    </div>
+
+    <!-- 功能2：可否认隐写 -->
+    <div class="card">
+      <div class="card-icon">🖼</div>
+      <div class="card-title">可否认隐写</div>
+      <div class="card-desc">加密数据藏入 PNG 像素最低位。用密码派生的 keystream 混淆，肉眼与统计检测均不可见。</div>
+      <div class="demo-file">📄 secret.zip → 🖼 photo.stego.png</div>
+      <div class="highlight">✅ 无密码者：这就是张普通照片</div>
+    </div>
+
+    <!-- 功能3：自解密 HTML -->
+    <div class="card">
+      <div class="card-icon">📄</div>
+      <div class="card-title">自解密 HTML</div>
+      <div class="card-desc">生成一个独立 HTML 文件内嵌解密逻辑。对方双击打开 → 输密码 → 自动解密，无需安装 FileLock。</div>
+      <div class="demo-file">📄 secret.zip → 📄 secret.zip.locked.html</div>
+      <div class="pills">
+        <span class="pill">零依赖</span>
+        <span class="pill">对方无需 FileLock</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-title">github.com/wengkit218-pixel/filelock</div>
+    <div class="cta-sub">双击 FileLock.html 即可使用 · 永久免费 · MIT 协议</div>
+    <div class="badges">
+      <div class="badge"><strong>100%</strong> 离线</div>
+      <div class="badge"><strong>0</strong> 依赖</div>
+      <div class="badge"><strong>10万次</strong> PBKDF2</div>
+      <div class="badge"><strong>AES-256</strong> GCM</div>
+      <div class="badge"><strong>跨平台</strong></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

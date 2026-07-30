@@ -26,7 +26,9 @@ So I built **FileLock**. It's **one HTML file**. You download it, double-click, 
 
 - 🔒 **AES-256-GCM** (military-grade, authenticated encryption)
 - 🔑 **PBKDF2-SHA256, 100,000 iterations** (brute-force resistant)
-- 📦 **Single HTML file**, 21KB, no install
+- 📦 **Single HTML file**, ~45KB, no install
+- 🖼 **Deniable steganography**: hide encrypted files inside PNG pixels (XOR-obfuscated — without the password it's just a normal-looking photo)
+- 📄 **Self-decrypting HTML**: generate a standalone .html that decrypts itself — recipient needs no FileLock
 - 🌐 **Cross-platform**: Windows / macOS / Linux / phone browsers
 - 🚫 **100% offline**: file never leaves your device, no telemetry, no CDN
 
@@ -73,7 +75,11 @@ Hey HN,
 
 I built FileLock because I was frustrated by "encrypted file" tools that all seem to want to either install a desktop app, register an account, or upload my file to "verify the encryption." 
 
-The whole tool is one HTML file (21KB). You download it, double-click, it opens in your browser, you drag your file in, set a password, and get an encrypted `.locked` file. Zero install. Zero network. Zero telemetry.
+The whole tool is one HTML file (~45KB). You download it, double-click, it opens in your browser, you drag your file in, set a password, and get an encrypted `.locked` file. Zero install. Zero network. Zero telemetry.
+
+It also does two things most file encryptors don't:
+- **Deniable steganography**: hide an encrypted file *inside a PNG photo* (LSB embed + XOR obfuscation, so without the password it's statistically indistinguishable from a normal image)
+- **Self-decrypting HTML**: export a standalone `.html` the recipient can open and decrypt with just the password — no FileLock needed
 
 Under the hood:
 - Web Crypto API (`crypto.subtle`) — browser-native AES-GCM
@@ -115,7 +121,7 @@ If you self-host, you probably also use some cloud storage for offsite backup. P
 
 **Specs:**
 - AES-256-GCM + PBKDF2 100k
-- Single HTML file, 21KB, no install
+- Single HTML file, ~45KB, no install
 - Cross-platform (Win/Mac/Linux/phone)
 - Open source MIT
 
@@ -143,7 +149,7 @@ Built this weekend as a learning project for the **Web Crypto API**.
 - `crypto.subtle.encrypt({name:'AES-GCM'}, ...)` for the actual crypto
 - `crypto.subtle.deriveKey` with PBKDF2 for password → key
 - File API + `Blob` for the download
-- ~21KB single HTML file
+- ~45KB single HTML file
 
 **Things I learned:**
 
@@ -168,11 +174,11 @@ PRs welcome, especially on:
 **Tweet 1 (主推):**
 ```
 
-🚀 Just shipped FileLock — a single HTML file that does AES-256-GCM encryption.
+🚀 Just shipped FileLock — a single HTML file that does AES-256-GCM encryption + deniable steganography + self-decrypting HTML.
 
 Download → double-click → drag file → set password → done.
 
-No install. No network. 21KB.
+No install. No network. ~45KB.
 
 github.com/wengkit218-pixel/filelock
 

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>FileLock Demo Helper</title>
+<style>
+  body { margin: 0; padding: 40px; background: #0a0a0f; font-family: sans-serif; color: #fff; }
+  iframe { width: 680px; height: 900px; border: none; background: #0a0a0f; border-radius: 16px; display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<iframe src="FileLock.html"></iframe>
+<script>
+// Auto-load a fake file via DataTransfer injection (we can't, but we can simulate)
+window.addEventListener('load', () => {
+  // simulate file selected via internal state
+  setTimeout(() => {
+    try {
+      const frame = document.querySelector('iframe');
+      const fakeFile = new File([new Uint8Array([0x50, 0x4B, 0x03, 0x04, 0xAA, 0xBB])], 'family-photos.zip', {type:'application/zip'});
+      const dt = new DataTransfer();
+      dt.items.add(fakeFile);
+      frame.contentWindow.selectedFiles.encrypt = fakeFile;
+      frame.contentDocument.getElementById('encFileName').textContent = 'family-photos.zip';
+      frame.contentDocument.getElementById('encFileSize').textContent = '125.3 MB';
+      frame.contentDocument.getElementById('encFileInfo').classList.add('show');
+      frame.contentDocument.getElementById('encPwd').value = 'MyStrongPassword123!';
+      frame.contentDocument.getElementById('encPwd').dispatchEvent(new Event('input'));
+      // Trigger strength display
+      frame.contentWindow.checkStrength('MyStrongPassword123!', 'encStrength', 'encStrengthText');
+      // Trigger result display
+      frame.contentDocument.getElementById('encResult').innerHTML = '✅ 加密成功！<br>文件已下载为 <code>family-photos.zip.locked</code><br>原始大小：125.3 MB · 加密后：125.3 MB';
+      frame.contentDocument.getElementById('encResult').classList.add('show');
+    } catch(e) { console.error(e); }
+  }, 1000);
+});
+</script>
+</body>
+</html>
