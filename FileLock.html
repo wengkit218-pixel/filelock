@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileLock — 离线文件加密工具</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #14141f;
+    --card2: #1c1c2b;
+    --border: #2a2a3d;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --accent: #f97316;
+    --accent2: #38bdf8;
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .container { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { text-align: center; margin-bottom: 32px; }
+  .logo { font-size: 2.5rem; margin-bottom: 8px; }
+  h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text2); font-size: 0.95rem; margin-top: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(34,197,94,0.1); color: var(--green);
+    padding: 4px 12px; border-radius: 999px; font-size: 0.8rem;
+    margin-top: 12px; border: 1px solid rgba(34,197,94,0.2);
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 16px;
+  }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; padding: 12px; text-align: center; border-radius: 10px;
+    background: var(--card2); border: 1px solid var(--border);
+    cursor: pointer; font-size: 0.9rem; font-weight: 600;
+    transition: all 0.2s; color: var(--text2);
+  }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 16px;
+  }
+  .dropzone.drag { border-color: var(--accent); background: rgba(249,115,22,0.05); }
+  .dropzone-icon { font-size: 2rem; margin-bottom: 8px; }
+  .dropzone-text { color: var(--text2); font-size: 0.9rem; }
+  .dropzone-hint { color: var(--text3); font-size: 0.75rem; margin-top: 4px; }
+  .file-info {
+    display: none; background: var(--card2); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 16px; font-size: 0.85rem;
+  }
+  .file-info.show { display: block; }
+  .file-name { color: var(--text); font-weight: 600; word-break: break-all; }
+  .file-size { color: var(--text2); font-size: 0.8rem; }
+  label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+  .input-wrap { position: relative; margin-bottom: 16px; }
+  input[type="password"], input[type="text"] {
+    width: 100%; padding: 12px 44px 12px 14px; border-radius: 10px;
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--text); font-size: 0.95rem; outline: none; transition: border 0.2s;
+  }
+  input:focus { border-color: var(--accent); }
+  .toggle-pwd {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; font-size: 1.1rem; user-select: none;
+  }
+  .strength { height: 4px; border-radius: 2px; background: var(--border); margin-top: 8px; overflow: hidden; }
+  .strength-bar { height: 100%; width: 0; transition: all 0.3s; }
+  .strength-text { font-size: 0.75rem; margin-top: 4px; color: var(--text3); }
+  .btn {
+    width: 100%; padding: 14px; border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #ea670c; }
+  .btn-primary:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
+  .btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--text2); }
+  .progress-wrap { display: none; margin-top: 16px; }
+  .progress-wrap.show { display: block; }
+  .progress-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.1s; }
+  .progress-text { font-size: 0.8rem; color: var(--text2); margin-top: 6px; text-align: center; }
+  .result {
+    display: none; margin-top: 16px; padding: 14px; border-radius: 10px;
+    background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);
+    font-size: 0.85rem; color: var(--green);
+  }
+  .result.show { display: block; }
+  .result.error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); color: var(--red); }
+  .result a { color: var(--accent2); text-decoration: none; font-weight: 600; }
+  .result a:hover { text-decoration: underline; }
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 8px; }
+  .feature { background: var(--card2); border-radius: 10px; padding: 14px; }
+  .feature-icon { font-size: 1.3rem; margin-bottom: 6px; }
+  .feature-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+  .feature-desc { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+  .security-note {
+    background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 10px; padding: 14px; font-size: 0.8rem; color: var(--text2); margin-top: 16px;
+  }
+  .security-note strong { color: var(--accent2); }
+  footer { text-align: center; color: var(--text3); font-size: 0.75rem; margin-top: 32px; }
+  footer a { color: var(--accent2); text-decoration: none; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; opacity: 0;
+    transition: all 0.3s; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🔐</div>
+    <h1>FileLock</h1>
+    <p class="subtitle">离线文件加密工具 · 零依赖 · 完全私密</p>
+    <div class="badge">🛡 100% 本地运行 · 文件不上传任何服务器</div>
+  </header>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="tabEncrypt" onclick="switchTab('encrypt')">🔒 加密</div>
+      <div class="tab" id="tabDecrypt" onclick="switchTab('decrypt')">🔓 解密</div>
+    </div>
+
+    <!-- Encrypt Tab -->
+    <div id="encryptPanel">
+      <div class="dropzone" id="encDrop" onclick="document.getElementById('encFile').click()">
+        <div class="dropzone-icon">📁</div>
+        <div class="dropzone-text">点击或拖拽文件到此处</div>
+        <div class="dropzone-hint">支持任意格式：图片 / 文档 / 视频 / 压缩包</div>
+      </div>
+      <input type="file" id="encFile" style="display:none" onchange="onFileSelect(this, 'encrypt')">
+
+      <div class="file-info" id="encFileInfo">
+        <div class="file-name" id="encFileName"></div>
+        <div class="file-size" id="encFileSize"></div>
+      </div>
+
+      <div class="input-wrap">
+        <label>设置密码</label>
+        <input type="password" id="encPwd" placeholder="输入强密码（建议 12+ 字符）" oninput="checkStrength(this.value, 'encStrength', 'encStrengthText')">
+        <span class="toggle-pwd" onclick="togglePwd('encPwd', this)">👁</span>
+        <div class="strength"><div class="strength-bar" id="encStrength"></div></div>
+        <div class="strength-text" id="encStrengthText"></div>
+      </div>
+
+      <button class="btn btn-primary" id="encBtn" onclick="encryptFile()" disabled>🔒 加密文件</button>
+
+      <div class="progress-wrap" id="encProgress">
+        <div class="progress-bar"><div class="progress-fill" id="encProgressFill"></div></div>
+        <div class="progress-text" id="encProgressText"></div>
+      </div>
+
+      <div class="result" id="encResult"></div>
+    </div>
+
+    <!-- Decrypt Tab -->
+    <div id="decryptPanel" style="display:none;">
+      <div class="dropzone" id="decDrop" onclick="document.getElementById('decFile').click()">
+        <div class="dropzone-icon">🔓</div>
+        <div class="dropzone-text">点击或拖拽 .locked 文件</div>
+        <div class="dropzone-hint">FileLock 加密后的文件</div>
+      </div>
+      <input type="file" id="decFile" accept=".locked" style="display:none" onchange="onFileSelect(this, 'decrypt')">
+
+      <div class="file-info" id="decFileInfo">
+        <div class="file-name" id="decFileName"></div>
+        <div class="file-size" id="decFileSize"></div>
+      </div>
+
+      <div class="input-wrap">
+        <label>输入密码</label>
+        <input type="password" id="decPwd" placeholder="输入加密时使用的密码">
+        <span class="toggle-pwd" onclick="togglePwd('decPwd', this)">👁</span>
+      </div>
+
+      <button class="btn btn-primary" id="decBtn" onclick="decryptFile()" disabled>🔓 解密文件</button>
+
+      <div class="progress-wrap" id="decProgress">
+        <div class="progress-bar"><div class="progress-fill" id="decProgressFill"></div></div>
+        <div class="progress-text" id="decProgressText"></div>
+      </div>
+
+      <div class="result" id="decResult"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🛡</div>
+        <div class="feature-title">完全离线</div>
+        <div class="feature-desc">使用浏览器原生 Web Crypto API，文件从不离开你的设备</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔑</div>
+        <div class="feature-title">AES-256-GCM</div>
+        <div class="feature-desc">军事级加密算法，全球安全标准</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title">单文件</div>
+        <div class="feature-desc">一个 HTML 文件，无需安装，双击即用</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">跨平台</div>
+        <div class="feature-desc">Windows / Mac / Linux / 手机浏览器均可用</div>
+      </div>
+    </div>
+
+    <div class="security-note">
+      <strong>🔐 安全说明：</strong><br>
+      • 密码通过 PBKDF2（10万次迭代）派生密钥，暴力破解极难<br>
+      • 每个文件使用随机 IV（初始化向量），相同文件加密结果不同<br>
+      • 密钥从不存储在磁盘或发送给任何服务器<br>
+      • <strong>请务必记住密码！</strong> 忘记密码 = 文件永久无法恢复
+    </div>
+  </div>
+
+  <footer>
+    FileLock v1.0 · 开源免费 · <a href="#" onclick="showAbout()">关于</a>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// FileLock — Offline file encryption using Web Crypto API
+// ============================================================
+const PBKDF2_ITERATIONS = 100000;
+const SALT_LENGTH = 16;
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16; // GCM auth tag
+
+let currentTab = 'encrypt';
+let selectedFiles = { encrypt: null, decrypt: null };
+
+// ---- Tab switching ----
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabEncrypt').classList.toggle('active', tab === 'encrypt');
+  document.getElementById('tabDecrypt').classList.toggle('active', tab === 'decrypt');
+  document.getElementById('encryptPanel').style.display = tab === 'encrypt' ? 'block' : 'none';
+  document.getElementById('decryptPanel').style.display = tab === 'decrypt' ? 'block' : 'none';
+}
+
+// ---- File selection ----
+function onFileSelect(input, mode) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedFiles[mode] = file;
+
+  const infoEl = document.getElementById(mode === 'encrypt' ? 'encFileInfo' : 'decFileInfo');
+  const nameEl = document.getElementById(mode === 'encrypt' ? 'encFileName' : 'decFileName');
+  const sizeEl = document.getElementById(mode === 'encrypt' ? 'encFileSize' : 'decFileSize');
+
+  nameEl.textContent = file.name;
+  sizeEl.textContent = formatSize(file.size);
+  infoEl.classList.add('show');
+
+  updateBtnState(mode);
+}
+
+// ---- Drag & drop ----
+function setupDropzone(zoneId, inputId, mode) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      onFileSelect(input, mode);
+    }
+  });
+}
+setupDropzone('encDrop', 'encFile', 'encrypt');
+setupDropzone('decDrop', 'decFile', 'decrypt');
+
+// ---- Password strength ----
+function checkStrength(pwd, barId, textId) {
+  const bar = document.getElementById(barId);
+  const text = document.getElementById(textId);
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (pwd.length >= 12) score++;
+  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+  if (/\d/.test(pwd)) score++;
+  if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+
+  const colors = ['#ef4444', '#f97316', '#fbbf24', '#22c55e', '#22c55e'];
+  const labels = ['太弱', '弱', '一般', '强', '很强'];
+  const pct = (score / 5) * 100;
+
+  bar.style.width = pct + '%';
+  bar.style.background = colors[Math.min(score, 4)];
+  text.textContent = pwd ? `密码强度：${labels[Math.min(score, 4)]}` : '';
+  text.style.color = colors[Math.min(score, 4)];
+
+  updateBtnState('encrypt');
+}
+
+// ---- Toggle password visibility ----
+function togglePwd(inputId, el) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') { input.type = 'text'; el.textContent = '🙈'; }
+  else { input.type = 'password'; el.textContent = '👁'; }
+}
+
+// ---- Update button state ----
+function updateBtnState(mode) {
+  if (mode === 'encrypt') {
+    const hasFile = !!selectedFiles.encrypt;
+    const hasPwd = document.getElementById('encPwd').value.length >= 1;
+    document.getElementById('encBtn').disabled = !(hasFile && hasPwd);
+  } else {
+    const hasFile = !!selectedFiles.decrypt;
+    const hasPwd = document.getElementById('decPwd').value.length >= 1;
+    document.getElementById('decBtn').disabled = !(hasFile && hasPwd);
+  }
+}
+document.getElementById('encPwd').addEventListener('input', () => updateBtnState('encrypt'));
+document.getElementById('decPwd').addEventListener('input', () => updateBtnState('decrypt'));
+
+// ---- Helpers ----
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+}
+
+function bufToHex(buf) {
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.borderColor = type === 'error' ? 'var(--red)' : type === 'success' ? 'var(--green)' : 'var(--border)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ---- Crypto core ----
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+// ---- Encrypt ----
+async function encryptFile() {
+  const file = selectedFiles.encrypt;
+  const password = document.getElementById('encPwd').value;
+  if (!file || !password) return;
+
+  const btn = document.getElementById('encBtn');
+  const progressWrap = document.getElementById('encProgress');
+  const progressFill = document.getElementById('encProgressFill');
+  const progressText = document.getElementById('encProgressText');
+  const resultEl = document.getElementById('encResult');
+
+  btn.disabled = true;
+  progressWrap.classList.add('show');
+  resultEl.classList.remove('show', 'error');
+  progressFill.style.width = '0%';
+
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+    const key = await deriveKey(password, salt);
+
+    progressText.textContent = '读取文件中…';
+    const data = await file.arrayBuffer();
+    progressFill.style.width = '30%';
+
+    progressText.textContent = '加密中…';
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, key, data
+    );
+    progressFill.style.width = '70%';
+
+    // Structure: MAGIC(6) + VERSION(1) + SALT(16) + IV(12) + ORIGINAL_NAME_LEN(2) + NAME + CIPHERTEXT
+    const nameBytes = new TextEncoder().encode(file.name);
+    const header = new Uint8Array(6 + 1 + SALT_LENGTH + IV_LENGTH + 2 + nameBytes.length);
+    let off = 0;
+    header.set(new Uint8Array([0x46, 0x4C, 0x4B, 0x31, 0x30, 0x30]), off); off += 6; // "FLK100"
+    header[off++] = 1; // version
+    header.set(salt, off); off += SALT_LENGTH;
+    header.set(iv, off); off += IV_LENGTH;
+    header[off++] = (nameBytes.length >> 8) & 0xff;
+    header[off++] = nameBytes.length & 0xff;
+    header.set(nameBytes, off); off += nameBytes.length;
+
+    const out = new Uint8Array(header.length + encrypted.byteLength);
+    out.set(header, 0);
+    out.set(new Uint8Array(encrypted), header.length);
+    progressFill.style.width = '90%';
+
+    const blob = new Blob([out], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name + '.locked';
+    a.click();
+    URL.revokeObjectURL(url);
+    progressFill.style.width = '100%';
+    progressText.textContent = '完成！';
+
+    resultEl.innerHTML = `✅ 加密成功！<br>文件已下载为 <code>${file.name}.locked</code><br>原始大小：${formatSize(file.size)} · 加密后：${formatSize(out.length)}`;
+    resultEl.classList.add('show');
+    showToast('加密完成，文件已下载', 'success');
+  } catch (e) {
+    resultEl.innerHTML = `❌ 加密失败：${e.message}`;
+    resultEl.classList.add('show', 'error');
+    showToast('加密失败', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---- Decrypt ----
+async function decryptFile() {
+  const file = selectedFiles.decrypt;
+  const password = document.getElementById('decPwd').value;
+  if (!file || !password) return;
+
+  const btn = document.getElementById('decBtn');
+  const progressWrap = document.getElementById('decProgress');
+  const progressFill = document.getElementById('decProgressFill');
+  const progressText = document.getElementById('decProgressText');
+  const resultEl = document.getElementById('decResult');
+
+  btn.disabled = true;
+  progressWrap.classList.add('show');
+  resultEl.classList.remove('show', 'error');
+  progressFill.style.width = '0%';
+
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    progressFill.style.width = '20%';
+
+    // Parse header
+    if (buf.length < 6 + 1 + SALT_LENGTH + IV_LENGTH + 2) throw new Error('文件格式无效');
+    const magic = String.fromCharCode(...buf.slice(0, 6));
+    if (magic !== 'FLK100') throw new Error('不是有效的 FileLock 文件');
+    let off = 6;
+    const version = buf[off++];
+    const salt = buf.slice(off, off + SALT_LENGTH); off += SALT_LENGTH;
+    const iv = buf.slice(off, off + IV_LENGTH); off += IV_LENGTH;
+    const nameLen = (buf[off] << 8) | buf[off + 1]; off += 2;
+    const origName = new TextDecoder().decode(buf.slice(off, off + nameLen)); off += nameLen;
+    const ciphertext = buf.slice(off);
+    progressFill.style.width = '40%';
+
+    const key = await deriveKey(password, salt);
+    progressText.textContent = '解密中…';
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv }, key, ciphertext
+    );
+    progressFill.style.width = '80%';
+
+    const blob = new Blob([decrypted], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = origName;
+    a.click();
+    URL.revokeObjectURL(url);
+    progressFill.style.width = '100%';
+    progressText.textContent = '完成！';
+
+    resultEl.innerHTML = `✅ 解密成功！<br>文件已恢复为 <code>${origName}</code><br>大小：${formatSize(decrypted.byteLength)}`;
+    resultEl.classList.add('show');
+    showToast('解密完成，文件已下载', 'success');
+  } catch (e) {
+    let msg = e.message;
+    if (e.name === 'OperationError') msg = '密码错误或文件已损坏';
+    resultEl.innerHTML = `❌ 解密失败：${msg}`;
+    resultEl.classList.add('show', 'error');
+    showToast('解密失败', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---- About ----
+function showAbout() {
+  showToast('FileLock v1.0 · 使用 Web Crypto API (AES-256-GCM) · 完全离线', 'info');
+}
+</script>
+</body>
+</html>
