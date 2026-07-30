@@ -5,6 +5,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Offline](https://img.shields.io/badge/100%25-Offline-blue.svg)](FileLock.html)
 
+## 📸 4 步加密流程
+
+![FileLock 使用流程](poster.png)
+
+*拖拽文件 → 设置密码 → 加密 → 完成。整个过程在浏览器本地完成，文件从不离开你的设备。*
+
 ---
 
 ## ✨ 特性
